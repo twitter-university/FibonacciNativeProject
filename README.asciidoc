@@ -1,0 +1,3 @@
+= About FibonacciNativeProject
+
+This repo represents an AndroidStudio project of a simple NDK application used for learning purposes.
