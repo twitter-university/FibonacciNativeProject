@@ -8,6 +8,8 @@ import android.os.Bundle;
 import android.os.SystemClock;
 import android.util.Log;
 
+import java.lang.ref.WeakReference;
+
 // used to maintain the state of the running async task in case the activity gets destroyed
 public class FibonacciFragment extends Fragment {
     private static final String TAG = FibonacciFragment.class.getSimpleName();
@@ -44,55 +46,8 @@ public class FibonacciFragment extends Fragment {
         final int type = arguments.getInt("type");
         final long n = arguments.getLong("n");
         Log.d(TAG, "onCreate() with type=" + type + ", n=" + n);
-
-        // run the expensive operation asynchronously
-        new AsyncTask<Void, Void, String>() {
-
-            // run on a background thread (must not touch the UI)
-            @Override
-            protected String doInBackground(Void... params) {
-                Log.d(TAG, "starting doInBackground() with " + type + ", n=" + n);
-                long result = 0;
-                long t = SystemClock.uptimeMillis();
-                switch (type) {
-                    case R.id.type_fib_jr:
-                        result = FibLib.fibJR(n);
-                        break;
-                    case R.id.type_fib_ji:
-                        result = FibLib.fibJI(n);
-                        break;
-                    case R.id.type_fib_nr:
-                        result = FibLib.fibNR(n);
-                        break;
-                    case R.id.type_fib_ni:
-                        result = FibLib.fibNI(n);
-                        break;
-                }
-                t = SystemClock.uptimeMillis() - t;
-                String ret = FibonacciFragment.this.getString(R.string.result_text, n, result, t);
-                Log.d(TAG, "finished doInBackground() with " + type + ", n="
-                        + n + " and result=" + result);
-                // send the result (ret) to the UI thread
-                return ret;
-            }
-
-            // handle the result (on the UI thread)
-            @Override
-            protected void onPostExecute(String result) {
-                // if there is no listener (i.e. activity)
-                if (FibonacciFragment.this.onResultListener == null) {
-                    Log.d(TAG, "Saving pending result: " + result);
-                    // save for the activity when it comes back (if
-                    // possible?)
-                    FibonacciFragment.this.pendingResult = result;
-                } else {
-                    // we are done, send the result
-                    Log.d(TAG, "Submitting result: " + result);
-                    FibonacciFragment.this.onResultListener
-                            .onResult(result);
-                }
-            }
-        }.execute();
+        // kick off the execution
+        new FibonacciAsyncTask(this, type, n).execute();
     }
 
     // invoked on configuration changes as well as state changes (on the UI thread)
@@ -124,5 +79,90 @@ public class FibonacciFragment extends Fragment {
         this.dialog.dismiss();
         this.dialog = null;
         this.onResultListener = null;
+    }
+
+    // simple Java bean to hold the result/time of fibonacci calculation
+    static final class FibonacciResponse {
+        private final long result;
+        private final long time;
+
+        FibonacciResponse(long result, long time) {
+            this.result = result;
+            this.time = time;
+        }
+
+        public long getResult() {
+            return result;
+        }
+
+        public long getTime() {
+            return time;
+        }
+    }
+
+    // async task to perform the fibonacci calculation on a background thread
+    static final class FibonacciAsyncTask extends AsyncTask<Void, Void, FibonacciResponse> {
+        private final WeakReference<FibonacciFragment> fibonacciFragmentRef;
+        private final int type;
+        private final long n;
+
+        public FibonacciAsyncTask(FibonacciFragment fibonacciFragment, int type, long n) {
+            // save a weak reference to the activity
+            // (in case it gets destroyed, we don't want to prevent it from being GC'ed)
+            this.fibonacciFragmentRef = new WeakReference<FibonacciFragment>(fibonacciFragment);
+            this.type = type;
+            this.n = n;
+        }
+
+        // do the actual fibonacci calculation (on a background thread)
+        @Override
+        protected FibonacciResponse doInBackground(Void... params) {
+            Log.d(TAG, "starting doInBackground() with for type=" + type + " and n=" + n);
+            long result = 0;
+            long time = SystemClock.uptimeMillis();
+            switch (this.type) {
+                case R.id.type_fib_jr:
+                    result = FibLib.fibJR(this.n);
+                    break;
+                case R.id.type_fib_ji:
+                    result = FibLib.fibJI(this.n);
+                    break;
+                case R.id.type_fib_nr:
+                    result = FibLib.fibNR(this.n);
+                    break;
+                case R.id.type_fib_ni:
+                    result = FibLib.fibNI(this.n);
+                    break;
+            }
+            time = SystemClock.uptimeMillis() - time;
+            Log.d(TAG, "finished doInBackground() for type=" + type + " and n=" + n + " " +
+                    "with result=" + result);
+            // return the response via a message queue to the UI thread (onPostExecute)
+            return new FibonacciResponse(result, time);
+        }
+
+        // handle the result (on the UI thread)
+        @Override
+        protected void onPostExecute(FibonacciResponse fibonacciResponse) {
+            FibonacciFragment fibonacciFragment = this.fibonacciFragmentRef.get();
+            if (fibonacciFragment == null) {
+                Log.d(TAG, "No fragment. Nothing to do with result. Giving up.");
+            } else {
+
+                String result = fibonacciFragment.getString(R.string.result_text,
+                        this.n, fibonacciResponse.getResult(),
+                        fibonacciResponse.getTime());
+                if (fibonacciFragment.onResultListener == null) {
+                    Log.d(TAG, "Saving pending result: " + result);
+                    // save for the activity when it comes back (if
+                    // possible?)
+                    fibonacciFragment.pendingResult = result;
+                } else {
+                    // we are done, send the result
+                    Log.d(TAG, "Submitting result: " + result);
+                    fibonacciFragment.onResultListener.onResult(result);
+                }
+            }
+        }
     }
 }
