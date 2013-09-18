@@ -7,8 +7,11 @@
     <string name="input_error">Numbers only!</string>
     <string name="button_text">Get Fib Result</string>
     <string name="progress_text">Calculating…</string>
+    <string name="result_text">fib(%1$d)=%2$d in %3$d ms</string>
     <string name="fib_error">Failed to get Fibonacci result</string>
     <string name="type_fib_jr">fibJR</string>
     <string name="type_fib_ji">fibJI</string>
+    <string name="type_fib_nr">fibNR</string>
+    <string name="type_fib_ni">fibNI</string>
 
 </resources>

@@ -17,6 +17,12 @@
         <RadioButton android:layout_height="wrap_content"
                      android:id="@+id/type_fib_ji" android:text="@string/type_fib_ji"
                      android:layout_width="match_parent" android:layout_weight="1" />
+        <RadioButton android:layout_height="wrap_content"
+                     android:checked="true" android:id="@+id/type_fib_nr" android:text="@string/type_fib_nr"
+                     android:layout_width="match_parent" android:layout_weight="1" />
+        <RadioButton android:layout_height="wrap_content"
+                     android:id="@+id/type_fib_ni" android:text="@string/type_fib_ni"
+                     android:layout_width="match_parent" android:layout_weight="1" />
     </RadioGroup>
     <Button android:text="@string/button_text" android:id="@+id/button"
             android:layout_width="match_parent" android:layout_height="wrap_content" />

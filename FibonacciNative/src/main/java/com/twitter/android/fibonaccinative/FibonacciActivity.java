@@ -1,11 +1,9 @@
 package com.twitter.android.fibonaccinative;
 
 import android.app.Activity;
-import android.app.ProgressDialog;
-import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.SystemClock;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
@@ -13,9 +11,9 @@ import android.widget.EditText;
 import android.widget.RadioGroup;
 import android.widget.TextView;
 
-import java.util.Locale;
-
-public class FibonacciActivity extends Activity implements OnClickListener {
+public class FibonacciActivity extends Activity implements OnClickListener,
+        FibonacciFragment.OnResultListener {
+    private static final String TAG = FibonacciActivity.class.getSimpleName();
 
     private EditText input;
 
@@ -23,54 +21,67 @@ public class FibonacciActivity extends Activity implements OnClickListener {
 
     private TextView output;
 
+    private Button button;
+
+    private FibonacciFragment fibonacciFragment;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        super.setContentView(R.layout.activity_fibonacci);
+        setContentView(R.layout.activity_fibonacci);
         this.input = (EditText) super.findViewById(R.id.input);
         this.type = (RadioGroup) super.findViewById(R.id.type);
         this.output = (TextView) super.findViewById(R.id.output);
-        Button button = (Button) super.findViewById(R.id.button);
-        button.setOnClickListener(this);
+        this.button = (Button) super.findViewById(R.id.button);
+        this.button.setOnClickListener(this);
+        // reconnect to our fragment (if it exists)
+        this.fibonacciFragment = (FibonacciFragment) super.getFragmentManager()
+                .findFragmentByTag("fibFrag");
+        if (savedInstanceState != null) {
+            Log.d(TAG, "Restoring output");
+            this.output.setText(savedInstanceState.getCharSequence("output"));
+        }
+        Log.d(TAG, "onCreate fibonacciFragment=" + this.fibonacciFragment);
     }
 
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putCharSequence("output", this.output.getText());
+        Log.d(TAG, "Saved output");
+    }
+
+    // called when the user clicks on the button (on the UI thread)
     public void onClick(View view) {
         String s = this.input.getText().toString();
         if (TextUtils.isEmpty(s)) {
             return;
         }
-        final ProgressDialog dialog = ProgressDialog.show(this, "",
-                "Calculating...", true);
-        final long n = Long.parseLong(s);
-        final Locale locale = super.getResources().getConfiguration().locale;
+        int type = FibonacciActivity.this.type.getCheckedRadioButtonId();
+        try {
+            long n = Long.parseLong(s);
+            Log.d(TAG, "onClick for type=" + type + " and n=" + n);
+            this.button.setEnabled(false);
+            // create our fragment and add it
+            this.fibonacciFragment = FibonacciFragment.newInstance(type, n);
+            super.getFragmentManager().beginTransaction()
+                    .add(this.fibonacciFragment, "fibFrag").commit();
+            Log.d(TAG, "Passed control to " + this.fibonacciFragment);
+        } catch (NumberFormatException e) {
+            Log.d(TAG, "Failed onClick for type=" + type + " and n=" + s);
+            this.input.setError(super.getText(R.string.input_error));
+        }
+    }
 
-        // WARNING: fails when rotated; which is OK for our demo purposes. In real-life consider
-        // using an AsyncTask within a detachable fragment that retains instance state when its
-        // parent activity is destroyed and recreated.
-        new AsyncTask<Void, Void, String>() {
-
-            @Override
-            protected String doInBackground(Void... params) {
-                long result = 0;
-                long t = SystemClock.uptimeMillis();
-                switch (FibonacciActivity.this.type.getCheckedRadioButtonId()) {
-                    case R.id.type_fib_jr:
-                        result = FibLib.fibJR(n);
-                        break;
-                    case R.id.type_fib_ji:
-                        result = FibLib.fibJI(n);
-                        break;
-                }
-                t = SystemClock.uptimeMillis() - t;
-                return String.format(locale, "fib(%d)=%d in %d ms", n, result,
-                        t);
-            }
-
-            @Override
-            protected void onPostExecute(String result) {
-                dialog.dismiss();
-                FibonacciActivity.this.output.setText(result);
-            }
-        }.execute();
+    // called from fragment (on the UI thread) when the result is available
+    public void onResult(String result) {
+        Log.d(TAG, "Posting result: " + result);
+        this.output.setText(result);
+        this.button.setEnabled(true);
+        // we no longer need the fragment; git rid of it
+        super.getFragmentManager().beginTransaction()
+                .remove(this.fibonacciFragment).commit();
+        this.fibonacciFragment = null;
+        Log.d(TAG, "Removed fragment");
     }
 }
