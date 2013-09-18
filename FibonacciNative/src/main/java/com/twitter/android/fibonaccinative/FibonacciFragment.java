@@ -38,7 +38,7 @@ public class FibonacciFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         // indicate that we want to survive configuration changes!
-        setRetainInstance(true);
+        super.setRetainInstance(true);
         // parse our arguments (from the factory method
         Bundle arguments = super.getArguments();
         final int type = arguments.getInt("type");
