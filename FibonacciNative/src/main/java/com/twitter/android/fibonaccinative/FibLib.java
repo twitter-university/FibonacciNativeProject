@@ -29,12 +29,8 @@ public class FibLib {
     }
 
     // Recursive Native implementation of the Fibonacci algorithm
-    public static long fibNR(long n) {
-        throw new UnsupportedOperationException("Implement me!");
-    }
+    public native static long fibNR(long n);
 
     // Iterative Native implementation of the Fibonacci algorithm
-    public static long fibNI(long n) {
-        throw new UnsupportedOperationException("Implement me!");
-    }
+    public native static long fibNI(long n);
 }

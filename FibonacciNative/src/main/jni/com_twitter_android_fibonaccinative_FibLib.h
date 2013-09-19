@@ -7,6 +7,22 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+/*
+ * Class:     com_twitter_android_fibonaccinative_FibLib
+ * Method:    fibNR
+ * Signature: (J)J
+ */
+JNIEXPORT jlong JNICALL Java_com_twitter_android_fibonaccinative_FibLib_fibNR
+  (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     com_twitter_android_fibonaccinative_FibLib
+ * Method:    fibNI
+ * Signature: (J)J
+ */
+JNIEXPORT jlong JNICALL Java_com_twitter_android_fibonaccinative_FibLib_fibNI
+  (JNIEnv *, jclass, jlong);
+
 #ifdef __cplusplus
 }
 #endif
