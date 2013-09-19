@@ -33,4 +33,8 @@ public class FibLib {
 
     // Iterative Native implementation of the Fibonacci algorithm
     public native static long fibNI(long n);
+
+    static {
+        System.loadLibrary("com_twitter_android_fibonaccinative_FibLib");
+    }
 }
